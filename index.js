@@ -303,7 +303,7 @@ client.on('message', message => {
                     quizQueue.push(Math.floor(Math.random() * 479));                  
                 }
                 console.log(quizQueue);
-                findLines('./spotifysongsreformatted', quizQueue).then(function(result){
+                findLines('./music/spotifysongsreformatted', quizQueue).then(function(result){
                     for(var j=0; j<result.length;j++){
                         result[j] = result[j].toLowerCase().split(" by ");
                         result[j][0] = result[j][0].split(" | ");
