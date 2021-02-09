@@ -5,6 +5,7 @@ const readline = require('readline');
 const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
 const { YTSearcher } = require('ytsearcher');
+const youtubeCrawler = require("youtube-sr").default;
 
 
 
@@ -96,12 +97,31 @@ async function playSong(songUrl, voiceChannel, messageChannel, spareLinks=[]) {
     //If message is not a youtube url will search for video using key terms on youtube
     if(!songUrl.startsWith("https://www.youtube.com/watch?v=")){
         console.log(songUrl);
-        let newLink = await youtube.search(songUrl);
-        console.log(newLink.first.url);
-        songUrl = newLink.first.url;
-        spareLinks = newLink.currentPage;
-    }     
+        try{
+            await youtubeCrawler.search(songUrl, { limit: 8 })
+            .then(x => {
+                spareLinks = x;
+                songUrl = spareLinks[0].url;
+                console.log("crawler");
+                console.log(songUrl);
+                streamMusic(songUrl, voiceChannel, messageChannel, spareLinks)
+            });
+        }
+        catch(error){
+            console.log(error);
+            let newLink = await youtube.search(songUrl);
+            console.log(newLink.first.url);
+            songUrl = newLink.first.url;
+            spareLinks = newLink.currentPage;
+        }
+        
+    }       
+}
+
+
+function streamMusic(songUrl, voiceChannel, messageChannel, spareLinks=[]) {
     try{
+        console.log(songUrl);
         if(!quizMessageChannel){
             messageChannel.send("now playing "+songUrl);
         } 
@@ -323,14 +343,12 @@ client.on('message', message => {
         for(i in playerArray){
             if(playerArray[i].Id == message.author.id && playerArray[i].Passed == false){
                 passes+=1;
-                message.channel.send(passes.toString()+"/"+Math.ceil(playerArray.length/2)+"votes required to pass the song have been cast"); 
-                if(passes>playerArray.length/2){
-                    quizNext(message.guild.voice.channel);                
-                }
-                else{
-                    playerArray[i].Passed = true;
-                }
+                message.channel.send(passes.toString()+"/"+Math.ceil((playerArray.length/2)+0.0001)+"votes required to pass the song have been cast"); 
+                playerArray[i].Passed = true;
             }
+        }
+        if(passes>playerArray.length/2){
+            quizNext(message.guild.voice.channel);                
         }
     }
     else if(message.channel == quizMessageChannel){
