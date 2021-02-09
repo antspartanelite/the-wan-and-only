@@ -255,7 +255,7 @@ client.on('message', message => {
     if(message.content === "hi" || message.content.indexOf("hello") != -1){
         message.channel.send("", {
         files: [
-            "./Hello There.png"
+            "./pictures/Hello There.png"
         ]
         });
     }
