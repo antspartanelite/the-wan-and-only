@@ -12,60 +12,68 @@ const youtubeCrawler = require("youtube-sr").default;
 // create a new Discord client
 const client = new Discord.Client();
 
-//create song queue
-let songQueue = [];
-let quizQueue = [];
-
 const {token, ytAPIkey, } = require('./config.json'); 
 
 const youtube = new YTSearcher(ytAPIkey);
 
-var isSongPlaying = false;
-
-
-
-var quizMessageChannel = null;
-var playerArray = [];
-var songAuthorGuessed = false;
-var songNameGuessed = false;
-var passes = 0;
 
 // when the client is ready, run this code
 // this event will trigger whenever your bot:
 // - finishes logging in
 // - reconnects after disconnecting
 client.on('ready', () => {
+    //Iterates through every server and initialises properties
+    client.guilds.cache.forEach(guild => {
+        //sets up the song and quiz music queues for each server
+        guild.songQueue = [];
+        guild.quizQueue = [];
+
+        //Initialises song and quiz logic properties
+        guild.isSongPlaying = false;
+        guild.quizMessageChannel = null;
+        guild.songAuthorGuessed = false;
+        guild.songNameGuessed = false;
+        
+        //Initialises the list of quiz
+        guild.playerArray = [];
+        
+        //Initialises the quiz pass counter
+        guild.passes = 0;
+        
+    });
     console.log("Hello There!");
 });
 
-function quizNext(voiceChannel){
-    songAuthorGuessed = false;
-    songNameGuessed = false;
-    passes = 0;
-    quizMessageChannel.send("The song was "+quizQueue[0][0][0]+" by "+quizQueue[0][1][0]);
-    quizQueue.shift();
-    if(quizQueue.length > 0){
-        playerArray.sort(function(a, b){return b.Score-a.Score});
+function quizNext(voiceChannel, guild){
+    guild.songAuthorGuessed = false;
+    guild.songNameGuessed = false;
+    guild.passes = 0;
+    guild.quizMessageChannel.send("The song was "+guild.quizQueue[0][0][0]+" by "+guild.quizQueue[0][1][0]);
+    guild.quizQueue.shift();
+    if(guild.quizQueue.length > 0){
+        guild.playerArray.sort(function(a, b){return b.Score-a.Score});
         let toSend = "The current ranking is:\n";
-        for(var i=0; i<playerArray.length;i++){
-            toSend += playerArray[i].Name+": "+playerArray[i].Score+"\n";
-            playerArray[i].Passed = false;       
+        for(var i=0; i<guild.playerArray.length;i++){
+            toSend += guild.playerArray[i].Name+": "+guild.playerArray[i].Score+"\n";
+            guild.playerArray[i].Passed = false;       
         }
-        quizMessageChannel.send(toSend);
-        playSong([quizQueue[0][0][0]," by ", quizQueue[0][1][0]].join(), voiceChannel, quizMessageChannel);
+        guild.quizMessageChannel.send(toSend);
+        playSong([guild.quizQueue[0][0][0]," by ", guild.quizQueue[0][1][0]].join(), voiceChannel, guild.quizMessageChannel, guild);
     }
     else{
-        playerArray.sort(function(a, b){return b.Score-a.Score});
+        guild.playerArray.sort(function(a, b){return b.Score-a.Score});
         let toSend = "The quiz is over, the final ranking is:\n";
-        for(var i=0; i<playerArray.length;i++){
-            toSend += playerArray[i].Name+": "+playerArray[i].Score+"\n";       
+        for(var i=0; i<guild.playerArray.length;i++){
+            toSend += guild.playerArray[i].Name+": "+guild.playerArray[i].Score+"\n";       
         }
-        quizMessageChannel.send(toSend);
-        quizMessageChannel = null;
-        songAuthorGuessed = false;
-        songNameGuessed = false;
-        playerArray = [];
-        quizQueue = [];
+        playSong("https://www.youtube.com/watch?v=nQEii6Fd2Qw", voiceChannel, guild.quizMessageChannel, guild);
+        guild.quizMessageChannel.send(toSend);
+        guild.quizMessageChannel = null;
+        guild.songAuthorGuessed = false;
+        guild.songNameGuessed = false;
+        guild.playerArray = [];
+        guild.quizQueue = [];
+        //https://www.youtube.com/watch?v=-cqKsBacyC0
     }
 }
 
@@ -93,7 +101,7 @@ async function findLines(fileToRead, lineNumbers) {
 }
 
 
-async function playSong(songUrl, voiceChannel, messageChannel, spareLinks=[]) {
+async function playSong(songUrl, voiceChannel, messageChannel, guild, spareLinks=[]) {
     //If message is not a youtube url will search for video using key terms on youtube
     if(!songUrl.startsWith("https://www.youtube.com/watch?v=")){
         console.log(songUrl);
@@ -104,7 +112,7 @@ async function playSong(songUrl, voiceChannel, messageChannel, spareLinks=[]) {
                 songUrl = spareLinks[0].url;
                 console.log("crawler");
                 console.log(songUrl);
-                streamMusic(songUrl, voiceChannel, messageChannel, spareLinks)
+                streamMusic(songUrl, voiceChannel, messageChannel, guild, spareLinks)
             });
         }
         catch(error){
@@ -113,31 +121,35 @@ async function playSong(songUrl, voiceChannel, messageChannel, spareLinks=[]) {
             console.log(newLink.first.url);
             songUrl = newLink.first.url;
             spareLinks = newLink.currentPage;
+            streamMusic(songUrl, voiceChannel, messageChannel, guild, spareLinks)
         }
         
+    }
+    else{
+        streamMusic(songUrl, voiceChannel, messageChannel, guild)    
     }       
 }
 
 
-function streamMusic(songUrl, voiceChannel, messageChannel, spareLinks=[]) {
+function streamMusic(songUrl, voiceChannel, messageChannel, guild, spareLinks=[]) {
     try{
         console.log(songUrl);
-        if(!quizMessageChannel){
+        if(!guild.quizMessageChannel){
             messageChannel.send("now playing "+songUrl);
         } 
         const originalMessage = songUrl.toString();
         voiceChannel.join().then(connection => {
           const dispatcher = connection.play(ytdl(songUrl, {filter: "audioonly"}));
           dispatcher.on('finish', end => {
-            if(songQueue.length > 0 && isSongPlaying == true){
-                playSong(songQueue[0].slice(9), voiceChannel, messageChannel);
-                songQueue.shift();
+            if(guild.songQueue.length > 0 && guild.isSongPlaying == true){
+                playSong(guild.songQueue[0].slice(9), voiceChannel, messageChannel, guild);
+                guild.songQueue.shift();
                 return;                
-            }else if(quizMessageChannel){
-                quizNext(voiceChannel);
+            }else if(guild.quizMessageChannel){
+                quizNext(voiceChannel, guild);
             }
             else{
-                isSongPlaying = false;
+                guild.isSongPlaying = false;
                 voiceChannel.leave();
                 return messageChannel.send("The queue has been completed"); 
             }
@@ -145,7 +157,7 @@ function streamMusic(songUrl, voiceChannel, messageChannel, spareLinks=[]) {
             dispatcher.on('error', error => {if(spareLinks.length == 0){messageChannel.send("Invalid URL(s)");}else{
                 messageChannel.send("Url unavailable trying another");
                 spareLinks.shift();
-                playSong(spareLinks[0].url, voiceChannel, messageChannel, spareLinks)
+                playSong(spareLinks[0].url, voiceChannel, messageChannel, guild, spareLinks)
             }});
         }).catch(err => console.log(err))
     }
@@ -159,21 +171,22 @@ client.login(token);
 
 client.on('message', message => {
     //if (message.author.bot) return;
+    
     if (message.author === client.user) return;
 
     if(message.content.startsWith("obi!play")){
         if(!message.member.voice.channel){
             return message.reply("You are not in a voice channel");  
         }
-        if(quizMessageChannel){
+        if(message.guild.quizMessageChannel){
             return message.reply("A quiz is now playing please wait until it is finished");                    
         }
         if(message.content == "obi!play"){
-            if(isSongPlaying == false){
-                if(songQueue.length > 0){
-                    playSong(songQueue[0].slice(9), message.member.voice.channel, message.channel);
-                    songQueue.shift();
-                    isSongPlaying = true;
+            if(message.guild.isSongPlaying == false){
+                if(message.guild.songQueue.length > 0){
+                    playSong(message.guild.songQueue[0].slice(9), message.member.voice.channel, message.channel, message.guild);
+                    message.guild.songQueue.shift();
+                    message.guild.isSongPlaying = true;
                     return;                
                 }
                 return message.reply("The queue is empty!");  
@@ -181,8 +194,8 @@ client.on('message', message => {
             return message.reply("I am already playing songs from the queue");       
         }
         else{
-            isSongPlaying = true;
-            playSong(message.content.slice(9), message.member.voice.channel, message.channel);
+            message.guild.isSongPlaying = true;
+            playSong(message.content.slice(9), message.member.voice.channel, message.channel, message.guild);
         }
     }
     if(message.content.startsWith("obi!pause")){
@@ -196,46 +209,46 @@ client.on('message', message => {
         if(message.content.length < 15){
             return message.reply("You didn't enter a valid song"); 
         }
-        songQueue.push("obi!play "+message.content.slice(14));
+        message.guild.songQueue.push("obi!play "+message.content.slice(14));
         message.channel.send("You have added: "+message.content.slice(14)+" to the queue");
     }
     else if(message.content.startsWith("obi!queue remove ")){
-        if(Number.isInteger(Number(message.content.slice(17))) && message.content.slice(17) <= songQueue.length && message.content.slice(17) > 0){
-            message.channel.send("Queue entry "+message.content.slice(17)+" - "+songQueue[Number(message.content.slice(17)-1)].slice(9)+ " - has been removed from the queue");
-            songQueue.splice(Number(message.content.slice(17))-1, 1);
+        if(Number.isInteger(Number(message.content.slice(17))) && message.content.slice(17) <= message.guild.songQueue.length && message.content.slice(17) > 0){
+            message.channel.send("Queue entry "+message.content.slice(17)+" - "+message.guild.songQueue[Number(message.content.slice(17)-1)].slice(9)+ " - has been removed from the queue");
+            message.guild.songQueue.splice(Number(message.content.slice(17))-1, 1);
             return;
         }
         return message.reply("You didn't enter a valid queue index! Please check if it is in bounds.");
     }
     else if(message.content == "obi!queue"){
         var tmp = "Queue:\n";
-        for (var i = 0; i < songQueue.length; i++) {
-            tmp += (i+1).toString()+": "+songQueue[i].slice(9)+"\n";
+        for (var i = 0; i < message.guild.songQueue.length; i++) {
+            tmp += (i+1).toString()+": "+message.guild.songQueue[i].slice(9)+"\n";
         } 
         message.channel.send(tmp);
     }
     else if(message.content == "obi!queue clear"){
-        songQueue = [];
+        message.guild.songQueue = [];
         return message.channel.send("The queue has been cleared");
     }
     else if(message.content == "obi!queue skip"){
         if(message.guild.voice == null || message.guild.voice.channel == null){
             return message.reply("I'm not in a voice channel at the moment");
         }
-        if(quizMessageChannel){
+        if(message.guild.quizMessageChannel){
             return message.reply("A quiz is currently playing, please wait until it has finished");
         }
-        if(songQueue.length >= 1){
-            playSong(songQueue[0].slice(9), message.guild.voice.channel, message.channel);
-            songQueue.shift();
+        if(message.guild.songQueue.length >= 1){
+            playSong(message.guild.songQueue[0].slice(9), message.guild.voice.channel, message.channel, message.guild);
+            message.guild.songQueue.shift();
             return;              
         }
-        isSongPlaying = false;
+        message.guild.isSongPlaying = false;
         message.guild.voice.channel.leave();  
         return message.channel.send("The queue has been completed");
     }
     else if(message.content == "obi!queue save"){
-        fs.writeFile('./music/songqueue.json',JSON.stringify(songQueue), function (err) {
+        fs.writeFile('./music/songQueue.json',JSON.stringify(message.guild.songQueue), function (err) {
             if (err) {
                 console.error('Crap happens');
             }
@@ -245,7 +258,7 @@ client.on('message', message => {
     else if(message.content == "obi!queue load"){
         fs.readFile('./music/songqueue.json', (err, data) => {
             if (err) throw err;
-            songQueue = JSON.parse(data);
+            message.guild.songQueue = JSON.parse(data);
         });
         return;              
     }
@@ -301,7 +314,13 @@ client.on('message', message => {
 
     else if(message.content == "obi!leave"){
         if(message.guild.voice != null && message.guild.voice.channel != null){
-            isSongPlaying = true
+            message.guild.isSongPlaying = false;
+            message.guild.quizMessageChannel = null;
+            message.guild.songAuthorGuessed = false;
+            message.guild.songNameGuessed = false;
+            message.guild.playerArray = [];
+            message.guild.quizQueue = [];
+            message.guild.passes = 0;
             message.guild.voice.channel.leave();        
         }
         else{
@@ -318,73 +337,73 @@ client.on('message', message => {
             message.channel.send(i.toString()); 
             i-=1; 
             if(i==0){
-                quizQueue = [];
+                message.guild.quizQueue = [];
                 for(var j = 0; j < 7; j++){
-                    quizQueue.push(Math.floor(Math.random() * 479));                  
+                    message.guild.quizQueue.push(Math.floor(Math.random() * 479));                  
                 }
-                console.log(quizQueue);
-                findLines('./music/spotifysongsreformatted', quizQueue).then(function(result){
+                console.log(message.guild.quizQueue);
+                findLines('./music/spotifysongsreformatted', message.guild.quizQueue).then(function(result){
                     for(var j=0; j<result.length;j++){
                         result[j] = result[j].toLowerCase().split(" by ");
                         result[j][0] = result[j][0].split(" | ");
                         result[j][1] = result[j][1].split(" | ");
                     }
                     console.log(result);
-                    quizMessageChannel = message.channel;
-                    isSongPlaying = false;
-                    quizQueue = result;
-                    playSong([quizQueue[0][0][0]," by ", quizQueue[0][1][0]].join(), message.member.voice.channel, quizMessageChannel);
+                    message.guild.quizMessageChannel = message.channel;
+                    message.guild.isSongPlaying = false;
+                    message.guild.quizQueue = result;
+                    playSong([message.guild.quizQueue[0][0][0]," by ", message.guild.quizQueue[0][1][0]].join(), message.member.voice.channel, message.guild.quizMessageChannel, message.guild);
                 });
                 clearInterval(counter);
             }
         }, 1000); 
     }
-    else if(message.channel == quizMessageChannel && message.content == "obi!pass"){
-        for(i in playerArray){
-            if(playerArray[i].Id == message.author.id && playerArray[i].Passed == false){
-                passes+=1;
-                message.channel.send(passes.toString()+"/"+Math.ceil((playerArray.length/2)+0.0001)+"votes required to pass the song have been cast"); 
-                playerArray[i].Passed = true;
+    else if(message.channel == message.guild.quizMessageChannel && message.content == "obi!pass"){
+        for(i in message.guild.playerArray){
+            if(message.guild.playerArray[i].Id == message.author.id && message.guild.playerArray[i].Passed == false){
+                message.guild.passes+=1;
+                message.channel.send(message.guild.passes.toString()+"/"+Math.ceil((message.guild.playerArray.length/2)+0.0001)+"votes required to pass the song have been cast"); 
+                message.guild.playerArray[i].Passed = true;
             }
         }
-        if(passes>playerArray.length/2){
-            quizNext(message.guild.voice.channel);                
+        if(message.guild.passes>message.guild.playerArray.length/2){
+            quizNext(message.guild.voice.channel, message.guild);                
         }
     }
-    else if(message.channel == quizMessageChannel){
+    else if(message.channel == message.guild.quizMessageChannel){
         let isInArray = false;
         let userIndex = 0;
         var reacted = false;
-        for(i in playerArray){
-            if(playerArray[i].Id == message.author.id){
+        for(i in message.guild.playerArray){
+            if(message.guild.playerArray[i].Id == message.author.id){
                 isInArray = true;
                 userIndex = i;
             }
         }
         if(!isInArray){
-            playerArray.push({Id:message.author.id, Score:0, Name:message.author.username, Passed:false});
-            userIndex = playerArray.length-1;
+            message.guild.playerArray.push({Id:message.author.id, Score:0, Name:message.author.username, Passed:false});
+            userIndex = message.guild.playerArray.length-1;
         }
-        if(!songNameGuessed){
-            for(i in quizQueue[0][0]){
-                if(message.content.indexOf(quizQueue[0][0][i]) != -1 ){
-                    songNameGuessed = true;
+        if(!message.guild.songNameGuessed){
+            for(i in message.guild.quizQueue[0][0]){
+                if(message.content.indexOf(message.guild.quizQueue[0][0][i]) != -1 ){
+                    message.guild.songNameGuessed = true;
                     reacted = true;
                 }
             }
-            if(songNameGuessed){
-                playerArray[userIndex].Score += 1;
+            if(message.guild.songNameGuessed){
+                message.guild.playerArray[userIndex].Score += 1;
                 message.react("✅");   
             }        
         }
-        if(!songAuthorGuessed){
-            for(i in quizQueue[0][1]){
-                if(message.content.indexOf(quizQueue[0][1][i]) != -1 ){
-                    songAuthorGuessed = true;
+        if(!message.guild.songAuthorGuessed){
+            for(i in message.guild.quizQueue[0][1]){
+                if(message.content.indexOf(message.guild.quizQueue[0][1][i]) != -1 ){
+                    message.guild.songAuthorGuessed = true;
                 }
             }
-            if(songAuthorGuessed){
-                playerArray[userIndex].Score += 1;  
+            if(message.guild.songAuthorGuessed){
+                message.guild.playerArray[userIndex].Score += 1;  
                 if(!reacted){
                         message.react("✅");
                 }
@@ -393,8 +412,8 @@ client.on('message', message => {
                     message.react("❌");                
             }        
         }
-        if(songAuthorGuessed && songNameGuessed){
-            quizNext(message.guild.voice.channel);
+        if(message.guild.songAuthorGuessed && message.guild.songNameGuessed){
+            quizNext(message.guild.voice.channel, message.guild);
         }
         
     }
