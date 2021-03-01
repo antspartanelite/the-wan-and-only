@@ -406,12 +406,13 @@ client.on('message', message => {
                 message.guild.playerArray[userIndex].Score += 1;  
                 if(!reacted){
                         message.react("✅");
+                        reacted = true;
                 }
-            }
-            else if(!reacted){
-                    message.react("❌");                
-            }        
+            }      
         }
+        if(!reacted){
+            message.react("❌");                
+        }  
         if(message.guild.songAuthorGuessed && message.guild.songNameGuessed){
             quizNext(message.guild.voice.channel, message.guild);
         }

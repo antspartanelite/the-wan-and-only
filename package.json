@@ -6,7 +6,7 @@
     "discord.js": "^12.5.1",
     "ffmpeg-static": "^4.2.7",
     "youtube-sr": "^3.0.4",
-    "ytdl-core": "^4.4.5",
+    "ytdl-core": "^4.5.0",
     "ytsearcher": "^1.2.3"
   }
 }
