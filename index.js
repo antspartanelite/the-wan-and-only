@@ -339,7 +339,7 @@ client.on('message', message => {
             if(i==0){
                 message.guild.quizQueue = [];
                 for(var j = 0; j < 7; j++){
-                    message.guild.quizQueue.push(Math.floor(Math.random() * 479));                  
+                    message.guild.quizQueue.push(Math.floor(Math.random() * 483));                  
                 }
                 console.log(message.guild.quizQueue);
                 findLines('./music/spotifysongsreformatted', message.guild.quizQueue).then(function(result){
