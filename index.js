@@ -327,10 +327,19 @@ client.on('message', message => {
             message.reply("I'm not in a voice channel at the moment"); 
         }
     }
-    else if(message.content == "obi!music-quiz"){
+    else if(message.content == "obi!music-quiz" || message.content == "obi!musicquiz" || message.content == "obi!musicquiz2" || message.content == "obi!music-quiz2"){
         if(!message.member.voice.channel){
             return message.reply("You are not in a voice channel");  
         }
+        if(message.content == "obi!musicquiz2" || message.content == "obi!music-quiz2"){
+            noOfSongs = 118;
+            songFileName = './music/instrumental';
+        }
+        else{
+            noOfSongs = 483;
+            songFileName = './music/spotifysongsreformatted';
+        }
+        
         message.channel.send("Welcome to the wan and only discord music quiz, the aim of the quiz is to guess the author and the song name correctly\nThe quiz will be starting in\n5");
         let i = 4        
         var counter = setInterval(() => {
@@ -339,10 +348,10 @@ client.on('message', message => {
             if(i==0){
                 message.guild.quizQueue = [];
                 for(var j = 0; j < 7; j++){
-                    message.guild.quizQueue.push(Math.floor(Math.random() * 483));                  
+                    message.guild.quizQueue.push(Math.floor(Math.random() * noOfSongs));                  
                 }
                 console.log(message.guild.quizQueue);
-                findLines('./music/spotifysongsreformatted', message.guild.quizQueue).then(function(result){
+                findLines(songFileName, message.guild.quizQueue).then(function(result){
                     for(var j=0; j<result.length;j++){
                         result[j] = result[j].toLowerCase().split(" by ");
                         result[j][0] = result[j][0].split(" | ");
