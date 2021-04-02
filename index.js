@@ -331,15 +331,18 @@ client.on('message', message => {
         if(!message.member.voice.channel){
             return message.reply("You are not in a voice channel");  
         }
+        if(message.guild.quizMessageChannel != null){
+            return message.reply("A music quiz is already playing");  
+        }
         if(message.content == "obi!musicquiz2" || message.content == "obi!music-quiz2"){
-            noOfSongs = 118;
+            noOfSongs = 136;
             songFileName = './music/instrumental';
         }
         else{
             noOfSongs = 483;
             songFileName = './music/spotifysongsreformatted';
         }
-        
+        message.guild.quizMessageChannel = message.channel;
         message.channel.send("Welcome to the wan and only discord music quiz, the aim of the quiz is to guess the author and the song name correctly\nThe quiz will be starting in\n5");
         let i = 4        
         var counter = setInterval(() => {
@@ -358,7 +361,6 @@ client.on('message', message => {
                         result[j][1] = result[j][1].split(" | ");
                     }
                     console.log(result);
-                    message.guild.quizMessageChannel = message.channel;
                     message.guild.isSongPlaying = false;
                     message.guild.quizQueue = result;
                     playSong([message.guild.quizQueue[0][0][0]," by ", message.guild.quizQueue[0][1][0]].join(), message.member.voice.channel, message.guild.quizMessageChannel, message.guild);
