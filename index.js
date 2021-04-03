@@ -335,7 +335,7 @@ client.on('message', message => {
             return message.reply("A music quiz is already playing");  
         }
         if(message.content == "obi!musicquiz2" || message.content == "obi!music-quiz2"){
-            noOfSongs = 136;
+            noOfSongs = 283;
             songFileName = './music/instrumental';
         }
         else{
@@ -350,7 +350,7 @@ client.on('message', message => {
             i-=1; 
             if(i==0){
                 message.guild.quizQueue = [];
-                for(var j = 0; j < 7; j++){
+                for(var j = 0; j < 10; j++){
                     message.guild.quizQueue.push(Math.floor(Math.random() * noOfSongs));                  
                 }
                 console.log(message.guild.quizQueue);
@@ -382,6 +382,9 @@ client.on('message', message => {
         }
     }
     else if(message.channel == message.guild.quizMessageChannel){
+        if(message.guild.quizQueue.length == 0){
+            return
+        }
         let isInArray = false;
         let userIndex = 0;
         var reacted = false;
