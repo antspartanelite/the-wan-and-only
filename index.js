@@ -63,16 +63,17 @@ function quizNext(voiceChannel, guild){
     else{
         guild.playerArray.sort(function(a, b){return b.Score-a.Score});
         let toSend = "The quiz is over, the final ranking is:\n";
+        const tmp = guild.quizMessageChannel;
         for(var i=0; i<guild.playerArray.length;i++){
             toSend += guild.playerArray[i].Name+": "+guild.playerArray[i].Score+"\n";       
         }
-        playSong("https://www.youtube.com/watch?v=nQEii6Fd2Qw", voiceChannel, guild.quizMessageChannel, guild);
         guild.quizMessageChannel.send(toSend);
         guild.quizMessageChannel = null;
         guild.songAuthorGuessed = false;
         guild.songNameGuessed = false;
         guild.playerArray = [];
         guild.quizQueue = [];
+        playSong("https://www.youtube.com/watch?v=nQEii6Fd2Qw", voiceChannel, tmp, guild);
         //https://www.youtube.com/watch?v=-cqKsBacyC0
     }
 }
