@@ -12,7 +12,7 @@ const youtubeCrawler = require("youtube-sr").default;
 // create a new Discord client
 const client = new Discord.Client();
 
-const {token, ytAPIkey, } = require('./config.json'); 
+const {botToken, ytAPIkey,} = require('./config.json'); 
 
 const youtube = new YTSearcher(ytAPIkey);
 
@@ -39,9 +39,8 @@ client.on('ready', () => {
         
         //Initialises the quiz pass counter
         guild.passes = 0;
-        
     });
-    console.log("Hello There!");
+    console.log("Hello There!")
 });
 
 function quizNext(voiceChannel, guild){
@@ -167,13 +166,29 @@ function streamMusic(songUrl, voiceChannel, messageChannel, guild, spareLinks=[]
     }
 }
 
+async function vadesSend(messageChannel, message, file={}){
+    let webhook = await messageChannel.fetchWebhooks();
+    webhook = webhook.find(x => x.name === "Lord Vades");
+
+    if(!webhook){
+        webhook = await messageChannel.createWebhook("Lord Vades", {
+            avatar: "./pictures/this is where the fun begins.jpg" 
+        });
+    }
+    webhook.send(message, file)
+}
+
 // login to Discord with your app's token
-client.login(token);
+client.login(botToken);
 
 client.on('message', message => {
     //if (message.author.bot) return;
     
-    if (message.author === client.user) return;
+    if (message.author === client.user || message.webhookID) return;
+
+    if (message.content == "obi!test"){
+        vadesSend(message.channel);
+    }
 
     if(message.content.startsWith("obi!play")){
         if(!message.member.voice.channel){
@@ -309,8 +324,93 @@ client.on('message', message => {
         message.channel.send("Don't forget, she's a politician, and they're **not** to be trusted.");
     }
 
+    if (message.content.indexOf("men") != -1 || message.content.indexOf("man") != -1){
+        var words = message.content.split(" ");
+        for (var i = 0; i < words.length; i++) {
+          if (words[i].indexOf("men") != -1) {
+            words[i] = "not just the " + words[i] + ", but the " + words[i].replace("men", "women") + " and the " + words[i].replace("men", "children") + " too";
+          }
+          if (words[i].indexOf("man") != -1) {
+            words[i] = "not just the " + words[i] + ", but the " + words[i].replace("man", "woman") + " and the " + words[i].replace("man", "childran") + " too";
+          }
+        }
+    vadesSend(message.channel, words.join(" "));
+    }
+
+    if (message.content.indexOf("trick") != -1) {
+        vadesSend(message.channel, "try spinning that's a good trick!");
+    }
+
+    if(message.content === "anakin, i'm appointing you as my personal representative on the jedi council"){
+        vadesSend(message.channel, "Me? A Master? I am overwhelmed, sir, but the Council elects its own members. They will never accept this.");
+    }
+
+    if (message.content.indexOf("sand") != -1){
+        vadesSend(message.channel, "I don't like sand. It's course and rough and irritating, and it gets everywhere");
+    }
+
+    if(message.content.indexOf("youngling") != -1){
+        vadesSend(message.channel, "", {
+        files: [
+            "./pictures/younglings.jpg"
+        ]
+        });
+    }
+
+    if(message.content.indexOf("order 66") != -1){
+        vadesSend(message.channel, "", {
+        files: [
+            "./pictures/anakin happy.jpg"
+        ]
+        });
+    }
+
+    if(message.content.indexOf("lie") != -1){
+        vadesSend(message.channel, "I see through the lies of the jedi");
+    }
+
+    if(message.content.indexOf("evil") != -1){
+        vadesSend(message.channel, "from my point of view the jedi are evil");
+    }
+
+    if(message.content.indexOf("over anakin") != -1 || message.content.indexOf("i have the high ground") != -1){
+        vadesSend(message.channel, "You underestimate my power");
+    }
+
+    if(message.content.indexOf("master") != -1){
+        vadesSend(message.channel, "It's outrageous it's unfair, how can you have a seat on the council but not be granted the rank of master");
+    }
+
+    if(message.content.indexOf("take a seat") != -1){
+        vadesSend(message.channel, "", {
+        files: [
+            "./pictures/anikan mad.jpg"
+        ]
+        });
+    }
+
+    if(message.content.indexOf("obiwan") != -1 || message.content.indexOf("obi wan") != -1 || message.content.indexOf("obi-wan") != -1 || message.content.indexOf("kenobi") != -1 || message.content.indexOf("the wan and only") != -1){
+        vadesSend(message.channel, "I don't want to hear anymore about obiwan");
+    }
+
+    if(message.content.indexOf("i got a job") != -1 || message.content.indexOf("i have a job") != -1 || message.content.indexOf("i now have a job") != -1 || message.content.indexOf("just got a job") != -1){
+        vadesSend(message.channel, "", {
+        files: [
+            "./pictures/who hired you.png"
+        ]
+        });
+    }
+
+    if(message.content.indexOf("dont try it") != -1 || message.content.indexOf("don't try it") != -1){
+        vadesSend(message.channel, "", {
+        files: [
+            "./pictures/anikan hate.jpg"
+        ]
+        });
+    }
+
     if(message.content.startsWith("obi!invite")){
-        message.channel.send("https://discord.com/api/oauth2/authorize?client_id=806342829995065435&permissions=70339648&scope=bot");
+        message.channel.send("https://discord.com/oauth2/authorize?client_id=806342829995065435&scope=bot&permissions=607636545");
     }
 
     else if(message.content == "obi!leave"){
