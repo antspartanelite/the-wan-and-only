@@ -7,7 +7,9 @@ All dependencies required for the bot to run correctly should be in the package.
 
 Also you will want to add a file named config.json and put it in the root directory of the bot. It shoud have the following formatting:
 
+```
 {
-  "token" : "Your discord bot token goes inbetween these two speech marks",
+  "botToken" : "Your discord bot token goes inbetween these two speech marks",
   "ytAPIkey" : "Your youtube api key goes inbetween these two speech marks"
 }
+```
