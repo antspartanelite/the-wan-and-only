@@ -7,12 +7,10 @@ const ytdl = require('ytdl-core');
 const { YTSearcher } = require('ytsearcher');
 const youtubeCrawler = require("youtube-sr").default;
 
-
-
 // create a new Discord client
 const client = new Discord.Client();
 
-const {botToken, ytAPIkey,} = require('./config.json'); 
+const {botToken, ytAPIkey} = require('./config.json'); 
 
 const youtube = new YTSearcher(ytAPIkey);
 
@@ -74,6 +72,7 @@ function quizNext(voiceChannel, guild){
         guild.quizQueue = [];
         playSong("https://www.youtube.com/watch?v=nQEii6Fd2Qw", voiceChannel, tmp, guild);
         //https://www.youtube.com/watch?v=-cqKsBacyC0
+        guild.quizMessageChannel = null;
     }
 }
 
@@ -186,10 +185,10 @@ client.on('message', message => {
     
     if (message.author === client.user || message.webhookID) return;
 
-    if (message.content == "obi!test"){
-        vadesSend(message.channel);
+    if (message.content == "obi!reset"){
+        message.guild.members.cache.get(client.user.id).setNickname("The Wan And Only");
     }
-
+	
     if(message.content.startsWith("obi!play")){
         if(!message.member.voice.channel){
             return message.reply("You are not in a voice channel");  
@@ -218,6 +217,9 @@ client.on('message', message => {
         message.guild.voice.connection.dispatcher.pause();
     }
     if(message.content.startsWith("obi!resume")){
+    	//Done due to bug where only resumes after resuming then repausing then resuming again
+    	message.guild.voice.connection.dispatcher.resume();
+    	message.guild.voice.connection.dispatcher.pause();
         message.guild.voice.connection.dispatcher.resume();
     }
 
@@ -365,7 +367,7 @@ client.on('message', message => {
         });
     }
 
-    if(message.content.indexOf("lie") != -1){
+    if(message.content.indexOf("lie ") != -1 || message.content.indexOf(" lie") != -1 || message.content == "lie"){
         vadesSend(message.channel, "I see through the lies of the jedi");
     }
 
@@ -393,7 +395,7 @@ client.on('message', message => {
         vadesSend(message.channel, "I don't want to hear anymore about obiwan");
     }
 
-    if(message.content.indexOf("i got a job") != -1 || message.content.indexOf("i have a job") != -1 || message.content.indexOf("i now have a job") != -1 || message.content.indexOf("just got a job") != -1){
+    if(message.content.indexOf("got a job") != -1 || message.content.indexOf("i have a job") != -1 || message.content.indexOf("i now have a job") != -1){
         vadesSend(message.channel, "", {
         files: [
             "./pictures/who hired you.png"
@@ -436,11 +438,11 @@ client.on('message', message => {
             return message.reply("A music quiz is already playing");  
         }
         if(message.content == "obi!musicquiz2" || message.content == "obi!music-quiz2"){
-            noOfSongs = 283;
+            noOfSongs = 295;
             songFileName = './music/instrumental';
         }
         else{
-            noOfSongs = 483;
+            noOfSongs = 520;
             songFileName = './music/spotifysongsreformatted';
         }
         message.guild.quizMessageChannel = message.channel;
